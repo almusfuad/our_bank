@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>
+            {% block title %}Banking System {% endblock %}
+      </title>
+      <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.0.1/dist/tailwind.min.css">
+</head>
+
+<body class="bg-indigo-600">
+      {% include 'navbar.html' %}
+      {% block content %}
+            <div class="lg:container lg:mx-auto" id="main">
+                  {% include 'messages.html' %}
+                  {% block body %} 
+                  {% endblock %}
+            </div>
+      {% endblock %}
+</body>
+
+</html>
