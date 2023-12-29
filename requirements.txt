@@ -1,0 +1,11 @@
+asgiref
+crispy-bootstrap5
+Django
+django-crispy-forms
+django-environ
+Pillow
+psycopg2
+python-decouple
+setuptools
+sqlparse
+tzdata
