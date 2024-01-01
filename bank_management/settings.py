@@ -114,7 +114,7 @@ WSGI_APPLICATION = 'bank_management.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         # Feel free to alter this value to suit your needs.
-        default='postgres://developer_f:w850PuBSBNn5VJFa47NajY2lj8eFwWXm@dpg-cm95v9ocmk4c7396uhqg-a.oregon-postgres.render.com/our_bank_ynxm',
+        default='postgres://ourbank_tpbm_user:iMugCdWnMCNmuiurwtWzmcIU8coYCqUH@dpg-cm9776fqd2ns73dla0v0-a.oregon-postgres.render.com/ourbank_tpbm',
     )
 }
 
