@@ -29,7 +29,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -111,9 +111,11 @@ WSGI_APPLICATION = 'bank_management.wsgi.application'
 # }
 
 DATABASES = {
-	"default": dj_database_url.parse(os.environ.get("DATABASE_URL"))
+    'default': dj_database_url.config(
+        # Feel free to alter this value to suit your needs.
+        default='postgres://ourbank_user:bWuFBsO6tmr47oR1KmzMiILnhWxouZui@dpg-cm7covun7f5s73db2g8g-a.oregon-postgres.render.com/ourbank',
+    )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
