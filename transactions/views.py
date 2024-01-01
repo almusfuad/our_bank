@@ -2,8 +2,9 @@ from django.views.generic import CreateView, ListView
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Transaction
-from .forms import DepositForm, WithdrawFrom, LoanRequestForm
-from .constants import DEPOSIT, WITHDRAWAL, LOAN, LOAN_PAID
+from accounts.models import UserBankAccount
+from .forms import DepositForm, WithdrawFrom, LoanRequestForm, TransferAmountForm
+from .constants import DEPOSIT, WITHDRAWAL, LOAN, LOAN_PAID, TRANSFER_AMOUNT
 from django.contrib import messages
 from django.http import HttpResponse
 from datetime import datetime
@@ -51,8 +52,6 @@ class TransactionCreateMixin(LoginRequiredMixin, CreateView):
             return context
       
 
-
-
 class DepositMoneyView(TransactionCreateMixin):
       form_class = DepositForm
       title = 'Deposit'
@@ -77,9 +76,7 @@ class DepositMoneyView(TransactionCreateMixin):
             
             return super().form_valid(form)           # It inherit the class and make override
       
-
-
-     
+    
 class WithdrawMoneyView(TransactionCreateMixin):
       form_class = WithdrawFrom
       title = 'Withdraw Money'
@@ -92,18 +89,22 @@ class WithdrawMoneyView(TransactionCreateMixin):
       def form_valid(self, form):
             amount = form.cleaned_data.get('amount')
             account = self.request.user.account
-            account.balance -= amount          # Subtract request balance to old balance
-            account.save(
-                  update_fields = ['balance']
-            )
-            messages.success(self.request, f'Amount {amount} was withdrawal from your account successfully.')
             
-            send_transactions_email(self.request.user, amount, 'Withdrawal Balance', 'transactions/withdrawal_email.html')
+            try: 
+                  # attempting to withdraw money
+                  account.balance -= amount          # Subtract request balance to old balance
+                  account.save(
+                        update_fields = ['balance']
+                  )
+                  messages.success(self.request, f'Amount {amount} was withdrawal from your account successfully.')
+                  
+                  send_transactions_email(self.request.user, amount, 'Withdrawal Balance', 'transactions/withdrawal_email.html')
             
-            return super().form_valid(form)           # It inherit the class and make override
+                  return super().form_valid(form)           # It inherit the class and make override
+            except Exception:
+                  messages.error(self.request, f'The bank is bankrupt.')
+                  return self.form_invalid(form)
       
-
-
      
 class LoanRequestView(TransactionCreateMixin):
       form_class = LoanRequestForm
@@ -127,8 +128,6 @@ class LoanRequestView(TransactionCreateMixin):
             return super().form_valid(form)           # It inherit the class and make override
       
       
-
-
 class TransactionReportView(LoginRequiredMixin, ListView):
       template_name = 'transactions/transaction_report.html'
       model = Transaction
@@ -170,7 +169,6 @@ class TransactionReportView(LoginRequiredMixin, ListView):
             return context
 
 
-
 class PayLoanView(LoginRequiredMixin, View):
       def get(self, request, loan_id):
             loan = get_object_or_404(Transaction, id = loan_id)
@@ -190,8 +188,7 @@ class PayLoanView(LoginRequiredMixin, View):
                         messages.error(self.request, f'Loan amount is greater than available balance.')
             return redirect('loan_list')
                   
- 
-                
+               
 class LoanListView(LoginRequiredMixin, ListView):
       model = Transaction
       template_name = 'transactions/loan_request.html'
@@ -201,3 +198,40 @@ class LoanListView(LoginRequiredMixin, ListView):
             user_account = self.request.user.account
             queryset = Transaction.objects.filter(account = user_account, transaction_type = LOAN)
             return queryset
+      
+      
+class TransferMoneyView(TransactionCreateMixin):
+      form_class = TransferAmountForm
+      title = 'Transfer Amount'
+      
+      def get_initial(self):
+            initial = {'transaction_type': TRANSFER_AMOUNT}
+            return initial
+      
+      def form_valid(self, form):
+            amount = form.cleaned_data.get('amount')
+            sender_account = self.request.user.account
+            recipient_account_number = form.cleaned_data.get('recipient_account_number')
+            recipient_account = UserBankAccount.objects.get(account_no = recipient_account_number)
+            
+            # Update balance for both accounts
+            sender_account.balance -= amount
+            recipient_account.balance += amount
+                  
+            sender_account.save(
+                  update_fields = ['balance']
+            )
+            messages.success(self.request, f'Transfer amount BDT{amount} to acc_no:{recipient_account} successfully.')
+            
+            recipient_account.save()
+            
+            # send email to the sender
+            sender = self.request.user
+            send_transactions_email(sender, amount, 'Send Money', 'transactions/send_money_email.html')
+            
+            # send email to the recipient
+            receiver = recipient_account.user
+            send_transactions_email(receiver, amount, 'Receive Money', 'transactions/receive_money_email.html')
+            
+            return super().form_valid(form)
+                  

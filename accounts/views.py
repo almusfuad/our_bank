@@ -3,15 +3,27 @@ from django.views.generic import FormView
 from .forms import UserRegistrationForm, UserUpdateForm
 from django.contrib.auth import login, logout
 from django.urls import reverse_lazy
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
 from django.views import View
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.contrib import messages
 # Create your views here.
+
+def user_info_email(user, field, subject, template):
+      message = render_to_string(template, {
+            'user': user,
+            'field': field,
+      })
+      send_email = EmailMultiAlternatives(subject, '', to = [user.email])
+      send_email.attach_alternative(message, 'text/html')
+      send_email.send()
 
 
 class UserRegistrationView(FormView):
       template_name = 'accounts/user_registration.html'
       form_class = UserRegistrationForm
-      success_url = reverse_lazy('register')
+      success_url = reverse_lazy('login')
       
       def form_valid(self, form):
             print(form.cleaned_data)
@@ -49,3 +61,23 @@ class UserUpdateView(View):
                   form.save()
                   return redirect('profile')
             return render(request, self.template_name, {'form', form})
+      
+      
+      
+class UserPasswordUpdateView(PasswordChangeView):
+      template_name = 'accounts/password.html'
+      success_url = reverse_lazy('profile')
+      
+      def form_valid(self, form):
+            messages.success(self.request, 'Password changed successfully.')
+            user_info_email(
+                  self.request.user, 
+                  'Password', 
+                  'Password change',
+                  'accounts/emails/password_email.html'
+                  )
+            return super().form_valid(form)
+      
+      def form_invalid(self, form):
+            messages.error(self.request, 'Invalid Password')
+            return super().form_invalid(form)

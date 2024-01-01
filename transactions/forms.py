@@ -1,6 +1,7 @@
 from django import forms
 from .models import Transaction
 from django.core.exceptions import ValidationError
+from accounts.models import UserBankAccount
 
 class TransactionForm(forms.ModelForm):
       class Meta:
@@ -32,7 +33,6 @@ class DepositForm(TransactionForm):
                   )
             return amount
 
-
 class WithdrawFrom(TransactionForm):
       def clean_amount(self):
             account = self.account
@@ -58,9 +58,45 @@ class WithdrawFrom(TransactionForm):
             
             return amount
       
-
 class LoanRequestForm(TransactionForm):
       def clean_amount(self):
             amount = self.cleaned_data.get('amount')
             
             return amount
+
+class TransferAmountForm(TransactionForm):
+      recipient_account_number = forms.CharField(label = 'Recipient Account Number', max_length = 20)
+      
+      def clean_amount(self):
+            sender_account = self.account
+            min_transfer_amount = 500
+            max_transfer_amount = 10000
+            sender_balance = sender_account.balance
+            amount = self.cleaned_data.get('amount')
+            if amount < min_transfer_amount:
+                  raise forms.ValidationError(
+                        f'You can transfer at least {min_transfer_amount}'
+                  )
+                  
+            if amount > max_transfer_amount:
+                  raise forms.ValidationError(
+                        f'You can transfer at most {max_transfer_amount}'
+                  )
+            
+            if amount > sender_balance:
+                  raise forms.ValidationError(
+                        f'You have {balance} in your account. '
+                        'You can not transfer more than your account balance.'
+                  )
+            
+            return amount
+      
+      def clean_recipient_account(self):
+            recipient_account_number = self.cleaned_data.get('recipient_account_number')
+            
+            if not UserBankAccount.objects.get(account_no = recipient_account_number):
+                  raise forms.ValidationError(
+                        f'Recipient account not found'
+                  )
+            else:
+                  return recipient_account_number

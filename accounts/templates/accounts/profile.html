@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %} {% block head_title %}Banking System{% endblock %} {% block body %} {% if form.non_field_errors %} {% for error in form.non_field_errors %}
+{% extends 'base.html' %} {% load static %} {% block title %}User Profile{% endblock %} {% block body %} {% if form.non_field_errors %} {% for error in form.non_field_errors %}
 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-2" role="alert">
     <p class="font-bold">Error!</p>
     <p class="block sm:inline">{{ error }}</p>
@@ -12,6 +12,7 @@
 <div class="bg-white px-3 py-4 rounded-xl my-6">
 
     <h4 class="font-bold text-3xl text-left pb-5">Account NO: {{request.user.account.account_no}}</h4>
+    <a href="{% url 'password_update' %}"><h4 class="font-bold text-3xl text-left pb-5">Update Password</h4></a>
     <h1 class="font-bold text-3xl text-center pb-5">Update Profile Information</h1>
     <div class="w-full mt-10">
         <form method="post" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
